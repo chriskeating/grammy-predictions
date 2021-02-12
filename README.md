@@ -1,6 +1,6 @@
 # Modeling Song Popularity with Spotify and Genius Data
 
-<p align="center"><img width=60% src="https://completemusicupdate.com/wp-content/uploads/2016/01/spotifygenius.jpg"></p>
+<p align="center"><img width=60% src="https://www.grammy.com/sites/com/files/styles/news_detail_header/public/2021-grammys-youtube_canvas.jpg"></p>
 <p align="center">
   <img src="https://img.shields.io/badge/python-v3.8+-blue.svg" />
   <img src="https://img.shields.io/badge/Maintained%3F-yes-green.svg" />
@@ -11,17 +11,21 @@
 
 ## Background
 
-I have a deep interest in audio and what attracts humans to different characteristics of songs and podcasts. I want to model those musical attributes and how those affect popularity in various ways. I brought together data from many different sources (webscraping, APIs, Spotify, Kaggle) and hope to bring a unique approach to measuring popularity and what causes it.
+I have a deep interest in audio and what attracts humans to different characteristics of songs and podcasts. I want to model those musical attributes and how those affect popularity in various ways. I brought together data from many different sources (webscraping, APIs, Spotify, Genius, Kaggle) and hope to bring a unique approach to measuring popularity and what causes it.
+
+From that research, then we can make some predictions for the upcoming 2021 Grammy Awards based on past winners and the musical attributes of this year's nominees. 
 
 <br>
 
 ## The Project
 Some skills I demonstrate in this project
   - cleaning and transforming messy data
-  - engineering features and bringing in data that does not seem to be related on its surface
+  - data modeling popularity (using regression) and genres (classification)
   - gleaning nonobvious insights based on subject matter expertise
-  - answering interesting questions 
   - webscraping and utilizing APIs
+  - visualizing time series
+  - getting to the "so what" - moving from the data to decisions-making (in this case, making financial bets on the Grammy Awards)
+  
 
 <br>
 
