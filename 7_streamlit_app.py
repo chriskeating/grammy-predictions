@@ -3,7 +3,7 @@ import streamlit as st
 import plotly.express as px
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import plotly.graph_objects as go
-
+st.set_page_config(page_title="Predicting and Betting the 2021 Grammy Awards!", page_icon='https://seeklogo.com/images/G/grammy-awards-logo-C83A55BBCB-seeklogo.com.png', layout='centered', initial_sidebar_state='collapsed')
 # @st.cache
 def get_data():
     return pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/grammy_nominees_with_music_attributes.csv").drop('Unnamed: 0', axis=1)
@@ -25,8 +25,10 @@ df = get_data()
 df.rename(columns={'valence': 'happiness'}, inplace=True)
 year = 2021
 
+nominees_for_2021 = list(df[df['year'] == 2021]['song'])
+
 # Header
-st.title(f"Predicting and Betting the 2021 Grammy Awards!")
+st.title("Predicting and Betting the 2021 Grammy Awards!")
 year = st.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
 x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
 trait = st.selectbox('Which value do you want to explore?', x_options)
@@ -75,11 +77,27 @@ if len(selected_attributes) > 0:
     compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
     spider_fig = go.Figure()
 
-    for song in song_comparisons:    
+    for song in song_comparisons:   
+        cat = compare_nominees_to_history.loc[song]['Category']
+        if cat == 'Historic Losers (10 years)':
+            fill_color = 'rgba(86, 0, 0, 0.7)'
+            border_color='#7a0000'
+        elif cat == 'Historic Winners (10 years)':
+            fill_color = 'rgba(0, 43, 0, 0.75)'
+            border_color='#216603'
+        elif cat == 'Current Year (Winner)':
+            fill_color = 'rgba(92, 237, 126, 0.5)'
+            border_color='#5ced7e'
+        elif cat == 'Current Year (Loser)':
+            fill_color = 'rgba(250, 112, 112, 0.5)'
+            border_color='#fa7070'
+#         st.header(song)
         spider_fig.add_trace(go.Scatterpolar(
               r=compare_nominees_to_history.loc[song][selected_attributes],
               theta=selected_attributes,
               fill='toself',
+              fillcolor=fill_color,
+              line=dict(color=border_color,width=2),
               name=song
         ))
 
@@ -93,8 +111,8 @@ if len(selected_attributes) > 0:
     )
 
     spider_fig.update_layout(title=f"Comparing This Year's Nominees with Past Winners and Losers", autosize=False,
-        width=800, height=800,
-        margin=dict(l=0, r=40, b=40, t=40))
+        width=1200, height=800,
+        margin=dict(l=100, r=40, b=40, t=40))
 
     st.plotly_chart(spider_fig)
 
@@ -117,7 +135,7 @@ st.header('What is your prediction for this year\'s song of the year?')
 
 most_important_trait = st.selectbox("Which attribute do you think is the most important?", ['- Pick the most important trait here -'] + x_options)
 
-winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Grammy Award for Best Song?", ['- Pick a winner here -'] + songs_to_compare[2:])
+winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Grammy Award for Best Song?", ['- Pick a winner here -'] + nominees_for_2021)
 
 
 
