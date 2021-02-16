@@ -3,12 +3,18 @@ import streamlit as st
 import plotly.express as px
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import plotly.graph_objects as go
-st.set_page_config(page_title="Predicting and Betting the 2021 Grammy Awards!", page_icon='https://seeklogo.com/images/G/grammy-awards-logo-C83A55BBCB-seeklogo.com.png', layout='centered', initial_sidebar_state='collapsed')
+st.set_page_config(page_title="Predicting and Betting the 2021 Grammy Awards!", page_icon='https://seeklogo.com/images/G/grammy-awards-logo-C83A55BBCB-seeklogo.com.png', layout='wide', initial_sidebar_state='collapsed')
+
+# layout="wide"
+
+c1, st, c2 = st.beta_columns((1, 5, 1))
+# st.beta_set_page_config(layout="wide")
+
 # @st.cache
 def get_data():
     return pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/grammy_nominees_with_music_attributes.csv").drop('Unnamed: 0', axis=1)
 def _max_width_():
-    max_width_str = f"max-width: 63%;"
+    max_width_str = f"max-width: 58%;"
     st.markdown(
         f"""
     <style>
@@ -20,7 +26,7 @@ def _max_width_():
         unsafe_allow_html=True,
     )
     
-_max_width_()
+# _max_width_()
 df = get_data()
 df.rename(columns={'valence': 'happiness'}, inplace=True)
 year = 2021
