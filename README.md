@@ -9,6 +9,9 @@
 
 <br>
 
+## Interactive App
+[Check out my interactive app](https://chriskeating-grammys.herokuapp.com/) where you can explore the different musical traits of the nominees and compare your predictions to my model!
+
 ## Background
 
 I have a deep interest in audio and what attracts humans to different characteristics of songs and podcasts. I want to model those musical attributes and how those affect popularity in various ways. I brought together data from many different sources (webscraping, APIs, Spotify, Genius, Kaggle) and hope to bring a unique approach to measuring popularity and what causes it.

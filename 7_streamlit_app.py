@@ -77,7 +77,7 @@ st.plotly_chart(fig)
 selected_attributes = st.multiselect('Which attributes do you want to view?',x_options, ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness'])
 
 songs_to_compare = compare_nominees_to_history.index.tolist()
-song_comparisons = st.multiselect("Songs to compare", songs_to_compare, default=songs_to_compare[0:3])
+song_comparisons = st.multiselect("Songs to compare", songs_to_compare, default=songs_to_compare[0:4])
 
 if len(selected_attributes) > 0:
     compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
@@ -127,7 +127,7 @@ if len(selected_attributes) > 0:
 grouped = df[df['year'] < year].groupby('year').mean()
 grouped = grouped[selected_attributes]
 grouped[selected_attributes] = MinMaxScaler().fit_transform(grouped[selected_attributes])
-grouped = grouped.rolling(10).mean().dropna()
+grouped = grouped.rolling(20).mean().dropna()
 
 # make y axis how important it was to winning
 group_fig = px.line(data_frame=grouped)
@@ -145,7 +145,22 @@ winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Gram
 
 
 
-
+# overlay all music with grammy nominess
+# show songs from a year
+# define each of the characteristics
+# print out lyrics and positivity and negativity score
+# clean one lyrics and display it
+# print out lyrics and discuss whether it is postive or negative
+# notebook 5 add nlp results
+# “Selected year” 
+# “Previous 10 years”
+# View historic winners as a checkbox
+# Add this year’s nominees
+# compare nominee avgs to music overall avgs
+# flip throught traits
+# which features did I find most important in 2021
+# regressions with small datasets
+# gradient booster, do other models
 
 
 
