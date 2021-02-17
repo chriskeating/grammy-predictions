@@ -105,7 +105,7 @@ if len(selected_attributes) > 0:
     )
 
     spider_fig.update_layout(title=f"Comparing This Year's Nominees with Past Winners and Losers", autosize=False,
-        width=1200, height=800,
+        width=1100, height=800,
         margin=dict(l=100, r=40, b=40, t=40))
 
     st.plotly_chart(spider_fig)
@@ -114,7 +114,7 @@ st.header('Do Grammy nominees follow existing trends in popular music, or do the
 st.write('And can we use this information to make a more educated guess about which traits are more/less important to predicting a winner for this year\'s Grammys?')
 
 # Transform data for line graph
-historical = pd.read_csv("data_by_year.csv").set_index('year')
+historical = pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/data_by_year.csv").set_index('year')
 historical.rename(columns={'valence': 'happiness'}, inplace=True)
 historical = historical[selected_attributes]
 historical[selected_attributes] = MinMaxScaler().fit_transform(historical[selected_attributes])
