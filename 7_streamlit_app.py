@@ -5,10 +5,7 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import plotly.graph_objects as go
 st.set_page_config(page_title="Predicting and Betting the 2021 Grammy Awards!", page_icon='https://seeklogo.com/images/G/grammy-awards-logo-C83A55BBCB-seeklogo.com.png', layout='wide', initial_sidebar_state='collapsed')
 
-# layout="wide"
-
-c1, st, c2 = st.beta_columns((1, 5, 1))
-# st.beta_set_page_config(layout="wide")
+c1, c2, st, c3 = st.beta_columns((1, .1, 5, 1))
 
 # @st.cache
 def get_data():
@@ -30,80 +27,71 @@ def _max_width_():
 df = get_data()
 df.rename(columns={'valence': 'happiness'}, inplace=True)
 year = 2021
-
 nominees_for_2021 = list(df[df['year'] == 2021]['song'])
 
-# Header
 st.title("Predicting and Betting the 2021 Grammy Awards!")
-year = st.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
+year = c1.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
 x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
-trait = st.selectbox('Which value do you want to explore?', x_options)
 st.header(f"You're looking at the Grammy Awards for {year}. See how the winner and losers compare to the previous ten years.")
 
 # Modify the passed in data
 df_history = df[(df['year'] < year) & (df['year'] > year - 10)]
 df_this_year = df[df['year'] == year]
-df_this_year['Category'] = 'Current Year (Loser)'
+df_this_year['Category'] = 'Selected Year (Loser)'
 df_this_year['Cat'] = 'Historic'
-df_this_year.loc[df_this_year['won_award'] == 1, 'Category'] = 'Current Year (Winner)'
+df_this_year.loc[df_this_year['won_award'] == 1, 'Category'] = 'Selected Year (Winner)'
 past_winners = df_history.drop(columns=['year']).groupby('won_award').agg('mean').reset_index()
 past_winners['Category'] = 'Historic'
 past_winners['Cat'] = 'Historic'
 past_winners['musician'] = ''
-past_winners.loc[past_winners['won_award'] == 0, 'Category'] = 'Historic Losers (10 years)'
-past_winners.loc[past_winners['won_award'] == 1, 'Category'] = 'Historic Winners (10 years)'
+past_winners.loc[past_winners['won_award'] == 0, 'Category'] = 'Past Losers (Previous 10 years)'
+past_winners.loc[past_winners['won_award'] == 1, 'Category'] = 'Past Winners (Previous 10 years)'
 past_winners['song'] = past_winners['Category']
 compare_nominees_to_history = pd.concat([past_winners,df_this_year[['song', 'musician', 'danceability', 'energy', 'key', 'loudness', 'mode', 'speechiness', 'acousticness', 'instrumentalness', 'liveness', 'happiness', 'tempo','duration_ms', 'time_signature', 'Category', 'won_award']]]).set_index('song', drop=True)
 
-# First bar chart (showing selected trait for year's nominees)
-fig = px.bar(
-    compare_nominees_to_history, 
-    x=compare_nominees_to_history.index, 
-    y=trait, 
-    color='Category', 
-    hover_data={'Category': False, 'Cat': False, 'musician': True},
-    text='Cat',
-    color_discrete_map={
-        'Current Year (Winner)': '#5ced7e',
-        'Current Year (Loser)': '#fa7070', 
-        'Historic Losers (10 years)': '#7a0000', 
-        'Historic Winners (10 years)': '#216603'
-    }).update_xaxes(
-    categoryorder="total descending")
-fig.update_layout(title=f"Comparing {trait.title()} in Past Winners and Losers, and This Year's Nominees", autosize=False,width=1200, height=500,margin=dict(l=0, r=40, b=40, t=40))
-st.plotly_chart(fig)
+# Spider graph for comparing nominees to past winners on all traits    
 
-# Spider graph for comparing nominees to past winners on all traits
-selected_attributes = st.multiselect('Which attributes do you want to view?',x_options, ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness'])
+# selected_attributes = st.multiselect('Which attributes do you want to view?',x_options, ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness'])
+selected_attributes = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
 
 songs_to_compare = compare_nominees_to_history.index.tolist()
-song_comparisons = st.multiselect("Songs to compare", songs_to_compare, default=songs_to_compare[0:4])
+song_comparisons = st.multiselect("Songs to compare", songs_to_compare[2:], default=songs_to_compare[3:6])
+include_historic = st.checkbox('Include the winners and losers from the previous 10 years')
+historic_songs = []
+if include_historic:
+    historic_songs = songs_to_compare[0:2]
 
 if len(selected_attributes) > 0:
     compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
     spider_fig = go.Figure()
+    if len(historic_songs) > 0:
+        for song in historic_songs:   
+            cat = compare_nominees_to_history.loc[song]['Category']
+            if cat == 'Past Losers (Previous 10 years)':
+                fill_color = 'rgba(86, 0, 0, 0.7)'
+                border_color='#7a0000'
+            elif cat == 'Past Winners (Previous 10 years)':
+                fill_color = 'rgba(0, 43, 0, 0.75)'
+                border_color='#216603'
+            song_name = song + ' - ' + compare_nominees_to_history.loc[song]['musician']
+            spider_fig.add_trace(go.Scatterpolar(
+                  r=compare_nominees_to_history.loc[song][selected_attributes],
+                  theta=selected_attributes,
+                  fill='toself',
+                  fillcolor=fill_color,
+                  line=dict(color=border_color,width=2),
+                  hovertext=song_name,
+                  name=song
+            ))
 
     for song in song_comparisons:   
         cat = compare_nominees_to_history.loc[song]['Category']
-        if cat == 'Historic Losers (10 years)':
-            fill_color = 'rgba(86, 0, 0, 0.7)'
-            border_color='#7a0000'
-        elif cat == 'Historic Winners (10 years)':
-            fill_color = 'rgba(0, 43, 0, 0.75)'
-            border_color='#216603'
-        elif cat == 'Current Year (Winner)':
-            fill_color = 'rgba(92, 237, 126, 0.5)'
-            border_color='#5ced7e'
-        elif cat == 'Current Year (Loser)':
-            fill_color = 'rgba(250, 112, 112, 0.5)'
-            border_color='#fa7070'
-#         st.header(song)
+        song_name = song + ' - ' + compare_nominees_to_history.loc[song]['musician']
         spider_fig.add_trace(go.Scatterpolar(
               r=compare_nominees_to_history.loc[song][selected_attributes],
               theta=selected_attributes,
               fill='toself',
-              fillcolor=fill_color,
-              line=dict(color=border_color,width=2),
+              hovertext=song_name,
               name=song
         ))
 
@@ -122,20 +110,48 @@ if len(selected_attributes) > 0:
 
     st.plotly_chart(spider_fig)
 
-    
+st.header('Do Grammy nominees follow existing trends in popular music, or do they start new trends?')
+st.write('And can we use this information to make a more educated guess about which traits are more/less important to predicting a winner for this year\'s Grammys?')
+
 # Transform data for line graph
-grouped = df[df['year'] < year].groupby('year').mean()
+historical = pd.read_csv("data_by_year.csv").set_index('year')
+historical.rename(columns={'valence': 'happiness'}, inplace=True)
+historical = historical[selected_attributes]
+historical[selected_attributes] = MinMaxScaler().fit_transform(historical[selected_attributes])
+historical = historical.rolling(20, min_periods=3).mean().dropna()
+historical = historical[historical.index > 1955]
+
+historical_grammy_comparison = st.selectbox('Musical attributes to compare:', x_options.copy())
+
+# grouped = df[df['year'] < year].groupby('year').mean()
+grouped = df.groupby('year').mean()
 grouped = grouped[selected_attributes]
 grouped[selected_attributes] = MinMaxScaler().fit_transform(grouped[selected_attributes])
-grouped = grouped.rolling(20).mean().dropna()
+grouped = grouped.rolling(20, min_periods=3).mean().dropna()
+# st.table(historical)
 
 # make y axis how important it was to winning
-group_fig = px.line(data_frame=grouped)
-group_fig.update_layout(title=f"Overall musical trends of Grammy Nominees", autosize=False,
+
+import plotly.graph_objects as go
+
+# x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+compare_fig = go.Figure()
+
+compare_fig.add_trace(go.Scatter(
+    x=grouped.index,
+    y=grouped[historical_grammy_comparison], 
+    name='Grammy nominees'
+))
+compare_fig.add_trace(go.Scatter(
+    x=historical.index,
+    y=historical[historical_grammy_comparison],
+    name='All songs in dataset'
+))
+compare_fig.update_layout(title=f"Compare Grammy nominees to overall music trends over time", autosize=False,
     width=1200, height=500,
     margin=dict(l=0, r=40, b=40, t=40))
-st.plotly_chart(group_fig)
-
+st.plotly_chart(compare_fig)
 
 st.header('What is your prediction for this year\'s song of the year?')
 
@@ -143,16 +159,24 @@ most_important_trait = st.selectbox("Which attribute do you think is the most im
 
 winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Grammy Award for Best Song?", ['- Pick a winner here -'] + nominees_for_2021)
 
+# ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
+
+# st.markdown(">Acousticness is a confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.")
+# st.markdown(">Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable")
+# st.markdown(">Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.")
+# st.markdown(">Loudness is the overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db.")
+# st.markdown(">Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.")
+# st.markdown(">Tempo is the overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.")
+# st.markdown(">Happiness is a measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
 
 
-# overlay all music with grammy nominess
+
+
 # show songs from a year
-# define each of the characteristics
 # print out lyrics and positivity and negativity score
 # clean one lyrics and display it
 # print out lyrics and discuss whether it is postive or negative
 # notebook 5 add nlp results
-# “Selected year” 
 # “Previous 10 years”
 # View historic winners as a checkbox
 # Add this year’s nominees
@@ -290,61 +314,6 @@ winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Gram
 # if btn:
 #     st.balloons()
 
-
-
-# current_attrs = ['danceability', 'acousticness', 'loudness']
-# speechiness = st.sidebar.checkbox('speechiness')
-# # acousticness = st.sidebar.checkbox('acousticness')
-# duration_ms = st.sidebar.checkbox('duration_ms')
-# energy = st.sidebar.checkbox('energy')
-# key = st.sidebar.checkbox('key')
-# # loudness = st.sidebar.checkbox('loudness')
-# mode = st.sidebar.checkbox('mode')
-# instrumentalness = st.sidebar.checkbox('instrumentalness')
-# liveness = st.sidebar.checkbox('liveness')
-# valence = st.sidebar.checkbox('valence')
-# tempo = st.sidebar.checkbox('tempo')
-# time_signature = st.sidebar.checkbox('time_signature')
-
-# if speechiness:
-#     current_attrs.append('speechiness')
-# # if acousticness:
-# #     current_attrs.append('acousticness')
-# if duration_ms:
-#     current_attrs.append('duration_ms')
-# if energy:
-#     current_attrs.append('energy')
-# if key:
-#     current_attrs.append('key')
-# # if loudness:
-# #     current_attrs.append('loudness')
-# if mode:
-#     current_attrs.append('mode')
-# if instrumentalness:
-#     current_attrs.append('instrumentalness')
-# if liveness:
-#     current_attrs.append('liveness')
-# if valence:
-#     current_attrs.append('valence')
-# if tempo:
-#     current_attrs.append('tempo')
-# if time_signature:
-#     current_attrs.append('time_signature')
-
-
-
-# Only a subset of options make sense
-
-
-# plot the value
-# fig = px.scatter(df,
-#                 x=x_axis,
-#                 y='rating',
-#                 hover_name='name',
-#                 title=f'Cereal ratings vs. {x_axis}')
-
-# st.plotly_chart(fig)
-
 # f = px.histogram(df.query(f"price.between{values}"), x="price", nbins=15, title="Price distribution")
 # f.update_xaxes(title="Price")
 # f.update_yaxes(title="No. of listings")
@@ -355,3 +324,56 @@ winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Gram
 # st.markdown("The first five records of the Airbnb data we downloaded.")
 
 # trait = st.selectbox('Which songs do you want to explore?', list(compare_nominees_to_history.index))
+
+# group_fig = px.line(data_frame=grouped)
+# group_fig.update_layout(title=f"Overall musical trends of Grammy Nominees", autosize=False,
+#     width=1200, height=500,
+#     margin=dict(l=0, r=40, b=40, t=40))
+# st.plotly_chart(group_fig)
+
+# trait = st.selectbox('Which value do you want to explore?', x_options)
+
+# # First bar chart (showing selected trait for year's nominees)
+# fig = px.bar(
+#     compare_nominees_to_history, 
+#     x=compare_nominees_to_history.index, 
+#     y=trait, 
+#     color='Category', 
+#     hover_data={'Category': False, 'Cat': False, 'musician': True},
+#     text='Cat',
+#     color_discrete_map={
+#         'Selected Year (Winner)': '#5ced7e',
+#         'Selected Year (Loser)': '#fa7070', 
+#         'Past Losers (Previous 10 years)': '#7a0000', 
+#         'Past Winners (Previous 10 years)': '#216603'
+#     }).update_xaxes(
+#     categoryorder="total descending")
+# fig.update_layout(title=f"Comparing {trait.title()} in Past Winners and Losers, and This Year's Nominees", autosize=False,width=1200, height=500,margin=dict(l=0, r=40, b=40, t=40))
+# st.plotly_chart(fig)
+
+
+# for song in song_comparisons:   
+#         cat = compare_nominees_to_history.loc[song]['Category']
+# #         if cat == 'Past Losers (Previous 10 years)':
+# #             fill_color = 'rgba(86, 0, 0, 0.7)'
+# #             border_color='#7a0000'
+# #         elif cat == 'Past Winners (Previous 10 years)':
+# #             fill_color = 'rgba(0, 43, 0, 0.75)'
+# #             border_color='#216603'
+# #         elif cat == 'Selected Year (Winner)':
+# #             fill_color = 'rgba(92, 237, 126, 0.5)'
+# #             border_color='#5ced7e'
+# #         elif cat == 'Selected Year (Loser)':
+# #             fill_color = 'rgba(250, 112, 112, 0.5)'
+# #             border_color='#fa7070'
+# #         st.header(song)
+#         song_name = song + ' - ' + compare_nominees_to_history.loc[song]['musician']
+#         spider_fig.add_trace(go.Scatterpolar(
+#               r=compare_nominees_to_history.loc[song][selected_attributes],
+#               theta=selected_attributes,
+#               fill='toself',
+# #               fillcolor=fill_color,
+# #               line=dict(color=border_color,width=2),
+#               hovertext=song_name,
+#               name=song
+#         ))
