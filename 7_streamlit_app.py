@@ -42,7 +42,7 @@ initial_year = int(df['year'].min()) + 1
 
 info_ph = st.empty()
 
-year = c1.slider("Select the year you want to check out:", first_year, last_year, initial_year, 1, key="initial")
+year = c1.slider("Select the year you want to check out:", first_year + 1, last_year, initial_year, 1, key="initial")
 
 # year = c1.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
 x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
