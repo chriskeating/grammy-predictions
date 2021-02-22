@@ -5,11 +5,11 @@ from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import plotly.graph_objects as go
 st.set_page_config(page_title="Predicting and Betting the 2021 Grammy Awards!", page_icon='https://seeklogo.com/images/G/grammy-awards-logo-C83A55BBCB-seeklogo.com.png', layout='wide', initial_sidebar_state='collapsed')
 
-c1, c2, st, c3 = st.beta_columns((1, .1, 5, 1))
+c1, c2, st, c3 = st.beta_columns((1.4, .2, 5, .5))
 
 # @st.cache
 def get_data():
-    return pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/grammy_nominees_with_music_attributes.csv").drop('Unnamed: 0', axis=1)
+    return pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/grammy_nominees_with_music_attributes+(1).csv").drop('Unnamed: 0', axis=1)
 def _max_width_():
     max_width_str = f"max-width: 58%;"
     st.markdown(
@@ -35,6 +35,7 @@ x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness
 st.header(f"You're looking at the Grammy Awards for {year}. See how the winner and losers compare to the previous ten years.")
 
 # Modify the passed in data
+df[x_options] = MinMaxScaler().fit_transform(df[x_options])
 df_history = df[(df['year'] < year) & (df['year'] > year - 10)]
 df_this_year = df[df['year'] == year]
 df_this_year['Category'] = 'Selected Year (Loser)'
@@ -62,7 +63,7 @@ if include_historic:
     historic_songs = songs_to_compare[0:2]
 
 if len(selected_attributes) > 0:
-    compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
+#     compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
     spider_fig = go.Figure()
     if len(historic_songs) > 0:
         for song in historic_songs:   
@@ -80,7 +81,7 @@ if len(selected_attributes) > 0:
                   fill='toself',
                   fillcolor=fill_color,
                   line=dict(color=border_color,width=2),
-                  hovertext=song_name,
+#                   hovertext=song_name,
                   name=song
             ))
 
@@ -91,7 +92,7 @@ if len(selected_attributes) > 0:
               r=compare_nominees_to_history.loc[song][selected_attributes],
               theta=selected_attributes,
               fill='toself',
-              hovertext=song_name,
+#               hovertext=song_name,
               name=song
         ))
 
@@ -109,6 +110,15 @@ if len(selected_attributes) > 0:
         margin=dict(l=100, r=40, b=40, t=40))
 
     st.plotly_chart(spider_fig)
+show_attrs = c1.checkbox('Show attribute definitions?')
+if show_attrs:
+    c1.markdown(">Acousticness is a confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.")
+    c1.markdown(">Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable")
+    c1.markdown(">Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.")
+    c1.markdown(">Loudness is the overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db.")
+    c1.markdown(">Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.")
+    c1.markdown(">Tempo is the overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.")
+    c1.markdown(">Valence (renamed as happiness) is a measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
 
 st.header('Do Grammy nominees follow existing trends in popular music, or do they start new trends?')
 st.write('And can we use this information to make a more educated guess about which traits are more/less important to predicting a winner for this year\'s Grammys?')
@@ -117,60 +127,108 @@ st.write('And can we use this information to make a more educated guess about wh
 historical = pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/data_by_year.csv").set_index('year')
 historical.rename(columns={'valence': 'happiness'}, inplace=True)
 historical = historical[selected_attributes]
-historical[selected_attributes] = MinMaxScaler().fit_transform(historical[selected_attributes])
+# historical[selected_attributes] = MinMaxScaler().fit_transform(historical[selected_attributes])
 historical = historical.rolling(20, min_periods=3).mean().dropna()
-historical = historical[historical.index > 1955]
+historical = historical[historical.index > 1960]
 
 historical_grammy_comparison = st.selectbox('Musical attributes to compare:', x_options.copy())
 
-# grouped = df[df['year'] < year].groupby('year').mean()
-grouped = df.groupby('year').mean()
-grouped = grouped[selected_attributes]
-grouped[selected_attributes] = MinMaxScaler().fit_transform(grouped[selected_attributes])
-grouped = grouped.rolling(20, min_periods=3).mean().dropna()
-# st.table(historical)
+grouped = df[df['year'] < year].groupby('year').mean()
+grouped_winners = df[df['won_award']==1].groupby('year').mean()
+grouped_winners = grouped_winners[selected_attributes]
+grouped_winners[selected_attributes] = MinMaxScaler().fit_transform(grouped_winners[selected_attributes])
+grouped_winners = grouped_winners.rolling(30, min_periods=5).mean().dropna()
 
-# make y axis how important it was to winning
+grouped_losers = df[df['won_award']==0].groupby('year').mean()
+grouped_losers = grouped_losers[selected_attributes]
+grouped_losers[selected_attributes] = MinMaxScaler().fit_transform(grouped_losers[selected_attributes])
+grouped_losers = grouped_losers.rolling(30, min_periods=5).mean().dropna()
+# st.table(historical)
+grouped[selected_attributes] = MinMaxScaler().fit_transform(grouped[selected_attributes])
+# df_this_year[selected_attributes] = MinMaxScaler().fit_transform(df_this_year[selected_attributes])
+
+grouped = df.groupby(['won_award', 'year']).mean()
+grouped = grouped[selected_attributes]
+
+grouped.reset_index(inplace=True)
+grouped_lose = grouped[(grouped['won_award'] == 0) & (grouped['year'] < 2021)]
+grouped_win = grouped[grouped['won_award'] == 1]
+grouped_lose.set_index('year', inplace=True)
+grouped_win.set_index('year', inplace=True)
+grouped_lose = grouped_lose.rolling(30, min_periods=5).mean().dropna()
+grouped_win = grouped_win.rolling(30, min_periods=5).mean().dropna()
 
 import plotly.graph_objects as go
-
-# x = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
 
 compare_fig = go.Figure()
 
 compare_fig.add_trace(go.Scatter(
-    x=grouped.index,
-    y=grouped[historical_grammy_comparison], 
-    name='Grammy nominees'
+    x=grouped_win.index,
+    y=grouped_win[historical_grammy_comparison], 
+    name='Grammy winners'
 ))
+
 compare_fig.add_trace(go.Scatter(
-    x=historical.index,
-    y=historical[historical_grammy_comparison],
-    name='All songs in dataset'
+    x=grouped_lose.index,
+    y=grouped_lose[historical_grammy_comparison], 
+    name='Grammy losers'
 ))
+
+def add_scatter_per_song(row):
+    compare_fig.add_trace(go.Scatter(x=[2021], y=[row[historical_grammy_comparison]], mode='markers', name=row['song']))
+df_this_year.apply(add_scatter_per_song, axis=1)
+    
 compare_fig.update_layout(title=f"Compare Grammy nominees to overall music trends over time", autosize=False,
-    width=1200, height=500,
+    width=1100, height=500,
     margin=dict(l=0, r=40, b=40, t=40))
 st.plotly_chart(compare_fig)
 
 st.header('What is your prediction for this year\'s song of the year?')
 
-most_important_trait = st.selectbox("Which attribute do you think is the most important?", ['- Pick the most important trait here -'] + x_options)
-
 winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Grammy Award for Best Song?", ['- Pick a winner here -'] + nominees_for_2021)
 
+if winner_prediction != '- Pick a winner here -':
+    st.header(f'Your selection is {winner_prediction} - let\'s see what the model and the public betting odds say about your selection:')
+
+    model = pd.read_csv("https://ckeatingnh-images.s3.us-east-2.amazonaws.com/models_final.csv").set_index('song')
+
+    display_model = model[['betting_odds_covers_com', 'preds_voting_classifier_exp']]
+
+    current_odds = list(display_model.loc[winner_prediction])
+
+    odds_fig = go.Figure()
+
+    odds_fig.add_trace(go.Indicator(
+        mode = "number",
+    #     mode = "number+delta",
+        value = current_odds[1],
+        title = {"text": "Chris' Model<br><span style='font-size:0.8em;color:gray'>Voting Classifier Model with Logistic Regression, KNN, and Decision Tree</span><br>"},
+    #     <span style='font-size:0.8em;color:gray'>Subsubtitle</span>
+    #     delta = {'reference': 400, 'relative': True},
+        domain = {'x': [0, .45], 'y': [0, 1]}
+    ))
+    
+    odds_fig.update_traces(number_suffix='%', selector=dict(type='indicator'))
+
+    odds_fig.add_trace(go.Indicator(
+        mode = "number",
+        value = current_odds[0],
+        title = {"text": "Betting Odds Implied Chance of Winning<br><span style='font-size:0.8em;color:gray'>Odds courtesy of Covers.com</span><br>"},
+    #     <span style='font-size:0.8em;color:gray'>Subsubtitle</span>
+    #     delta = {'reference': 400, 'relative': True},
+        domain = {'x': [.55, 1], 'y': [0, 1]}
+    ))
+    
+    odds_fig.update_traces(number_suffix='%', selector=dict(type='indicator'))
+
+    odds_fig.update_layout(autosize=False, width=1100, height=500, margin=dict(l=0, r=40, b=40, t=40))
+
+    st.plotly_chart(odds_fig)
+
+
+
+# most_important_trait = st.selectbox("Which attribute do you think is the most important?", ['- Pick the most important trait here -'] + x_options)
 # ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
-
-# st.markdown(">Acousticness is a confidence measure from 0.0 to 1.0 of whether the track is acoustic. 1.0 represents high confidence the track is acoustic.")
-# st.markdown(">Danceability describes how suitable a track is for dancing based on a combination of musical elements including tempo, rhythm stability, beat strength, and overall regularity. A value of 0.0 is least danceable and 1.0 is most danceable")
-# st.markdown(">Energy is a measure from 0.0 to 1.0 and represents a perceptual measure of intensity and activity. Typically, energetic tracks feel fast, loud, and noisy. For example, death metal has high energy, while a Bach prelude scores low on the scale. Perceptual features contributing to this attribute include dynamic range, perceived loudness, timbre, onset rate, and general entropy.")
-# st.markdown(">Loudness is the overall loudness of a track in decibels (dB). Loudness values are averaged across the entire track and are useful for comparing relative loudness of tracks. Loudness is the quality of a sound that is the primary psychological correlate of physical strength (amplitude). Values typical range between -60 and 0 db.")
-# st.markdown(">Speechiness detects the presence of spoken words in a track. The more exclusively speech-like the recording (e.g. talk show, audio book, poetry), the closer to 1.0 the attribute value. Values above 0.66 describe tracks that are probably made entirely of spoken words. Values between 0.33 and 0.66 describe tracks that may contain both music and speech, either in sections or layered, including such cases as rap music. Values below 0.33 most likely represent music and other non-speech-like tracks.")
-# st.markdown(">Tempo is the overall estimated tempo of a track in beats per minute (BPM). In musical terminology, tempo is the speed or pace of a given piece and derives directly from the average beat duration.")
-# st.markdown(">Happiness is a measure from 0.0 to 1.0 describing the musical positiveness conveyed by a track. Tracks with high valence sound more positive (e.g. happy, cheerful, euphoric), while tracks with low valence sound more negative (e.g. sad, depressed, angry).")
-
-
-
 
 # show songs from a year
 # print out lyrics and positivity and negativity score
@@ -185,23 +243,6 @@ winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Gram
 # which features did I find most important in 2021
 # regressions with small datasets
 # gradient booster, do other models
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # st.header("Caching our data")
 # st.markdown("Streamlit has a handy decorator [`st.cache`](https://streamlit.io/docs/api.html#optimize-performance) to enable data caching.")
@@ -377,3 +418,72 @@ winner_prediction = st.selectbox("Your prediction: which song wins the 2021 Gram
 #               hovertext=song_name,
 #               name=song
 #         ))
+
+
+# import numpy as np
+# compare_fig.add_trace(go.Scatter(
+#     x=list(historical.index) + [2021],
+#     y=list(historical[historical_grammy_comparison]) + [np.nan, np.nan],
+#     name='Overall music trends (170k songs)'
+# ))
+
+# st.write(current_odds)
+
+# # html_code = f"""
+# # <table style="width:100%">
+# #   <tr>
+# #     <th>Betting Odds</th>
+# #     <th>Chris' Model</th>
+# #   </tr>
+# #   <tr>
+# #     <td>{current_odds[0]}</td>
+# #     <td>{current_odds[1]}</td>
+# #   </tr>
+# # </table>
+# # """
+
+# html_code = """
+# <table class="eli5-weights eli5-feature-importances" style="border-collapse: collapse; border: none; margin-top: 0em; table-layout: auto;">
+# <thead>
+# <tr style="border: none;">
+#     <th style="padding: 0 1em 0 0.5em; text-align: right; border: none;">Weight</th>
+#     <th style="padding: 0 0.5em 0 0.5em; text-align: left; border: none;">Feature</th>
+# </tr>
+# </thead>
+# <tbody>
+#     <tr style="background-color: hsl(120, 100.00%, 80.00%); border: none;">
+#         <td style="padding: 0 1em 0 0.5em; text-align: right; border: none;">
+#             0.4567 &plusmn; 0.5815
+#         </td>
+#         <td style="padding: 0 0.5em 0 0.5em; text-align: left; border: none;">
+#             x3
+#         </td>
+#     </tr>
+#     <tr style="background-color: hsl(120, 100.00%, 81.40%); border: none;">
+#         <td style="padding: 0 1em 0 0.5em; text-align: right; border: none;">
+#             0.4116 &plusmn; 0.5792
+#         </td>
+#         <td style="padding: 0 0.5em 0 0.5em; text-align: left; border: none;">
+#             x2
+#         </td>
+#     </tr>
+#     <tr style="background-color: hsl(120, 100.00%, 93.05%); border: none;">
+#         <td style="padding: 0 1em 0 0.5em; text-align: right; border: none;">
+#             0.1008 &plusmn; 0.2772
+#         </td>
+#         <td style="padding: 0 0.5em 0 0.5em; text-align: left; border: none;">
+#             x0
+#         </td>
+#     </tr>
+#     <tr style="background-color: hsl(120, 100.00%, 96.96%); border: none;">
+#         <td style="padding: 0 1em 0 0.5em; text-align: right; border: none;">
+#             0.0309 &plusmn; 0.0822
+#         </td>
+#         <td style="padding: 0 0.5em 0 0.5em; text-align: left; border: none;">
+#             x1
+#         </td>
+#     </tr>
+# </tbody>
+# """
+
+# st.markdown(html_code, unsafe_allow_html=True)
