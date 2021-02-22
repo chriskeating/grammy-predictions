@@ -29,10 +29,79 @@ df.rename(columns={'valence': 'happiness'}, inplace=True)
 year = 2021
 nominees_for_2021 = list(df[df['year'] == 2021]['song'])
 
+
+# def animate_year():
+    
+#     time.sleep(1)
+
 st.title("Predicting and Betting the 2021 Grammy Awards!")
-year = c1.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
+
+first_year = int(df['year'].min())
+last_year = int(df['year'].max())
+initial_year = int(df['year'].min()) + 1
+
+info_ph = st.empty()
+
+year = c1.slider("Select the year you want to check out:", first_year, last_year, initial_year, 1, key="initial")
+
+# year = c1.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
 x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
 st.header(f"You're looking at the Grammy Awards for {year}. See how the winner and losers compare to the previous ten years.")
+
+# import time
+
+# slider_ph = st.empty()
+# # info_ph = st.empty()
+
+# # value = slider_ph.slider("slider", 0, 100, 25, 1)
+# # info_ph.info(value)
+
+# if c1.button('See trends over the years'):
+#     for x in range(1960, 2021):
+#         time.sleep(.5)
+
+# #         value = slider_ph.slider("slider", 0, 100, value + 1, 1)
+#         year = c1.slider("Select the year you want to check out:", first_year, last_year, initial_year + 1)
+# #         info_ph.info(value)
+
+
+
+# # slider_ph = st.empty()
+# info_ph = st.empty()
+
+# # value = slider_ph.slider("slider", 0, 50, initial_year, 1, key="initial")
+# info_ph.info(year)
+
+# if st.button('animate'):
+#     for x in range(1960, 2021):
+#         time.sleep(.5)
+
+# #         value = slider_ph.slider("slider", 0, 50, value + 1, 1, key="animated")
+#         year = c1.slider("Select the year you want to check out:", first_year, last_year, initial_year + 1, 1, key="animated")
+#         info_ph.info(year)
+
+
+# import time
+
+# if c1.button('See trends over the years'):
+#     year = 1960
+#     while year < 2021:
+#         year = year + 1
+#         time.sleep(2)
+        
+# import SessionState
+
+# state = SessionState.get(position=0)
+
+# # The slider needs to come after the button, to make sure the first increment
+# # works correctly. So we create a placeholder for it here first, and fill it in
+# # later.
+# widget = st.empty()
+
+# if st.button('Increment position'):
+#     state.position += 1
+
+# state.position = widget.slider('Position', 0, 100, state.position)
 
 # Modify the passed in data
 df[x_options] = MinMaxScaler().fit_transform(df[x_options])
@@ -56,13 +125,15 @@ compare_nominees_to_history = pd.concat([past_winners,df_this_year[['song', 'mus
 selected_attributes = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
 
 songs_to_compare = compare_nominees_to_history.index.tolist()
-song_comparisons = st.multiselect("Songs to compare", songs_to_compare[2:], default=songs_to_compare[3:6])
-include_historic = st.checkbox('Include the winners and losers from the previous 10 years')
+song_comparisons = st.multiselect("Songs to compare", songs_to_compare[2:], default=[])
+include_historic = st.checkbox('Include the winners and losers from the previous 10 years', value = True)
 historic_songs = []
 if include_historic:
     historic_songs = songs_to_compare[0:2]
+    if year == 1959:
+        historic_songs = songs_to_compare[2:]
 
-if len(selected_attributes) > 0:
+if len(selected_attributes) > 0 and year > 1959:
 #     compare_nominees_to_history[selected_attributes] = MinMaxScaler().fit_transform(compare_nominees_to_history[selected_attributes])
     spider_fig = go.Figure()
     if len(historic_songs) > 0:
@@ -202,7 +273,7 @@ if winner_prediction != '- Pick a winner here -':
         mode = "number",
     #     mode = "number+delta",
         value = current_odds[1],
-        title = {"text": "Chris' Model<br><span style='font-size:0.8em;color:gray'>Voting Classifier Model with Logistic Regression, KNN, and Decision Tree</span><br>"},
+        title = {"text": "Chris' Model<br><span style='font-size:0.8em;color:gray'>Voting Classifier with LogReg, KNN, and Decision Tree</span><br>"},
     #     <span style='font-size:0.8em;color:gray'>Subsubtitle</span>
     #     delta = {'reference': 400, 'relative': True},
         domain = {'x': [0, .45], 'y': [0, 1]}
@@ -213,7 +284,7 @@ if winner_prediction != '- Pick a winner here -':
     odds_fig.add_trace(go.Indicator(
         mode = "number",
         value = current_odds[0],
-        title = {"text": "Betting Odds Implied Chance of Winning<br><span style='font-size:0.8em;color:gray'>Odds courtesy of Covers.com</span><br>"},
+        title = {"text": "Betting Odds<br><span style='font-size:0.8em;color:gray'> Implied Chance of Winning based on Betting Odds on Covers.com</span><br>"},
     #     <span style='font-size:0.8em;color:gray'>Subsubtitle</span>
     #     delta = {'reference': 400, 'relative': True},
         domain = {'x': [.55, 1], 'y': [0, 1]}
@@ -225,7 +296,145 @@ if winner_prediction != '- Pick a winner here -':
 
     st.plotly_chart(odds_fig)
 
+    
+# __________________________________________________________________________________________________________________________________________________________________________
 
+# # simplify naming for 
+# dataset = past_winners.copy() 
+
+# # get list of weeks
+# weeks = np.sort(dataset['year'].unique())
+
+# # get list of teams
+# # teams = dataset['team'].unique()
+
+# # make figure
+# fig_dict = {
+#     "data": [],
+#     "layout": {},
+#     "frames": []
+# }
+
+# # fill in most of layout
+# fig_dict["layout"]["xaxis"] = {"range": [2.75, 6.5], "title": "Avg YPP Offense, 1st Down"}
+# fig_dict["layout"]["yaxis"] = {'range': [2, 6.5], "title": "Avg YPP Defense, 1st Down"} #, "type": "log"
+# fig_dict["layout"]["hovermode"] = "closest"
+# fig_dict["layout"]["updatemenus"] = [
+#     {
+#         "buttons": [
+#             {
+#                 "args": [None, {"frame": {"duration": 2000, "redraw": False},
+#                                 "fromcurrent": True, "transition": {"duration": 2000,
+#                                                                     "easing": "quadratic-in-out"}}],
+#                 "label": "Play",
+#                 "method": "animate"
+#             },
+#             {
+#                 "args": [[None], {"frame": {"duration": 0, "redraw": False},
+#                                   "mode": "immediate",
+#                                   "transition": {"duration": 0}}],
+#                 "label": "Pause",
+#                 "method": "animate"
+#             }
+#         ],
+#         "direction": "left",
+#         "pad": {"r": 10, "t": 87},
+#         "showactive": True,
+#         "type": "buttons",
+#         "x": 0.1,
+#         "xanchor": "right",
+#         "y": 0,
+#         "yanchor": "top"
+#     }
+# ]
+
+# sliders_dict = {
+#     "active": 0,
+#     "yanchor": "top",
+#     "xanchor": "left",
+#     "currentvalue": {
+#         "font": {"size": 20},
+#         "prefix": "Week ",
+#         "visible": True,
+#         "xanchor": "center"
+#     },
+#     "transition": {"duration": 10000, "easing": "cubic-in-out"},
+#     "pad": {"b": 10, "t": 50},
+#     "len": 0.9,
+#     "x": 0.1,
+#     "y": 0,
+#     "steps": []
+# }
+# # Columns are team, week, Yardsmean_off, Yardsmean_def, color, win, points_scored, points_given_up
+# # make initial chart
+# week = 1
+# for team in teams:
+#     dataset_by_week = dataset[dataset["week"] == week]
+#     dataset_by_week_and_team = dataset_by_week[
+#         dataset_by_week["team"] == team]
+
+#     data_dict = {
+#         "x": list(dataset_by_week_and_team["Yardsmean_off"]),
+#         "y": list(dataset_by_week_and_team["Yardsmean_def"]),
+#         "mode": "markers+text",
+#         "text": list(dataset_by_week_and_team["team"]),
+#         'textfont': {
+#                 'size': 8, 
+#                 'color': 'white'},
+#             "marker": {
+#                 'color': colors_dict[team],
+#                 "sizemode": "area",
+#                 "sizeref": 100,
+#                 "size": list(dataset_by_week_and_team["Yardsmean_off"]), 
+#                 'sizemin': 10
+#             },
+#         "name": team
+#     }
+#     fig_dict["data"].append(data_dict)
+
+# # make frames
+# for week in weeks:
+#     frame = {"data": [], "name": str(week)}
+#     for team in teams:
+#         dataset_by_week = dataset[dataset["week"] == int(week)]
+#         dataset_by_week_and_team = dataset_by_week[
+#             dataset_by_week["team"] == team]
+
+#         data_dict = {
+#             "x": list(dataset_by_week_and_team["Yardsmean_off"]),
+#             "y": list(dataset_by_week_and_team["Yardsmean_def"]),
+#             "mode": "markers+text",
+#             "text": list(dataset_by_week_and_team["team"]),
+#             'textfont': {
+#                 'size': 8, 
+#                 'color': 'white'},
+#             "marker": {
+#                 'color': colors_dict[team],
+#                 "sizemode": "area",
+#                 "sizeref": 100,
+#                 "size": list(dataset_by_week_and_team["Yardsmean_off"]), 
+#                 'sizemin': 10            },
+#             "name": team
+#         }
+#         frame["data"].append(data_dict)
+
+#     fig_dict["frames"].append(frame)
+#     slider_step = {"args": [
+#         [week],
+#         {"frame": {"duration": 8000, "redraw": False},
+#          "mode": "immediate",
+#          "transition": {"duration": 2000}}
+#     ],
+#         "label": str(week),
+#         "method": "animate"}
+#     sliders_dict["steps"].append(slider_step)
+
+
+# fig_dict["layout"]["sliders"] = [sliders_dict]
+
+# moving_fig = go.Figure(fig_dict)
+# moving_fig.update_layout(showlegend=False)
+# st.plotly_chart(moving_fig)
 
 # most_important_trait = st.selectbox("Which attribute do you think is the most important?", ['- Pick the most important trait here -'] + x_options)
 # ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
