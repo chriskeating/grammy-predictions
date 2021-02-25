@@ -29,6 +29,13 @@ df.rename(columns={'valence': 'happiness'}, inplace=True)
 year = 2021
 nominees_for_2021 = list(df[df['year'] == 2021]['song'])
 
+# link = '[Visit my code repository here!](https://github.com/chriskeating/grammy-predictions)'
+# c3.markdown(link, unsafe_allow_html=True)
+c3.header('Visit the code repository here!')
+
+link ='<a href="https://github.com/chriskeating/grammy-predictions" ><img src="https://1000logos.net/wp-content/uploads/2018/11/GitHub-logo.png" alt="drawing" width="100%" align=\'center\'/></a>'
+
+c3.markdown(link, unsafe_allow_html=True)
 
 # def animate_year():
     
@@ -47,6 +54,8 @@ year = c1.slider("Select the year you want to check out:", first_year + 1, last_
 # year = c1.slider("Select the year you want to check out:", int(df['year'].min()), int(df['year'].max()), int(df['year'].max()))
 x_options = ['danceability', 'energy', 'loudness',  'speechiness', 'acousticness',  'tempo', 'happiness']
 st.header(f"You're looking at the Grammy Awards for {year}. See how the winner and losers compare to the previous ten years.")
+
+# https://discuss.streamlit.io/t/animate-st-slider/1441/8
 
 # import time
 
@@ -296,7 +305,13 @@ if winner_prediction != '- Pick a winner here -':
 
     st.plotly_chart(odds_fig)
 
-    
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 # __________________________________________________________________________________________________________________________________________________________________________
 
 # # simplify naming for 
